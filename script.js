@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         triggerBtn.textContent = 'Triggering...';
         triggerBtn.style.opacity = '0.7';
 
-        const webhookUrl = 'https://coolblu.app.n8n.cloud/webhook-test/apollo-clay-instantly';
+        const webhookUrl = 'https://coolblu.app.n8n.cloud/webhook/apollo-clay-instantly';
 
         try {
             // Uncomment the below code to make the actual fetch request to your n8n instance

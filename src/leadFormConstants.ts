@@ -1,5 +1,5 @@
 export const WEBHOOK_URL =
-  'https://coolblu.app.n8n.cloud/webhook-test/apollo-clay-instantly';
+  'https://coolblu.app.n8n.cloud/webhook/apollo-clay-instantly';
 
 export const INDUSTRIES = [
   'Construction',

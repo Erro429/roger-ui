@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   ONE_CLICK_EXCLUDE_KEYWORDS,
@@ -39,27 +39,37 @@ function buildOneClickPayload(): Record<string, string> {
   };
 }
 
+type PayloadKey = keyof ReturnType<typeof buildOneClickPayload>;
+
+const FORM_FIELDS: {
+  label: string;
+  key: PayloadKey;
+  multiline?: boolean;
+}[] = [
+  { label: 'Job Titles', key: 'contactTarget' },
+  { label: 'Department', key: 'department' },
+  { label: 'Employees', key: 'companySize' },
+  { label: 'Revenue', key: 'revenue' },
+  { label: 'Location', key: 'state' },
+  { label: 'Industries', key: 'industry', multiline: true },
+  { label: 'Include Keywords', key: 'keywords', multiline: true },
+  { label: 'Exclude Keywords', key: 'excludeKeywords', multiline: true },
+  { label: 'Lead count', key: 'leadCount' },
+  { label: 'Campaign name', key: 'campaignName' },
+];
+
 const LeadGenerationForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState(() => buildOneClickPayload());
   const [toast, setToast] = useState<{
     type: 'success' | 'error';
     message: string;
     detail?: string;
   } | null>(null);
-  const payloadPreview = useMemo(() => buildOneClickPayload(), []);
-  const previewRows = useMemo(
-    () => [
-      ['Job Titles', payloadPreview.contactTarget],
-      ['Department', payloadPreview.department],
-      ['Employees', payloadPreview.companySize],
-      ['Revenue', payloadPreview.revenue],
-      ['Location', payloadPreview.state],
-      ['Industries', payloadPreview.industry],
-      ['Include Keywords', payloadPreview.keywords],
-      ['Exclude Keywords', payloadPreview.excludeKeywords],
-    ],
-    [payloadPreview]
-  );
+
+  const updateField = (key: PayloadKey, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const sendToWebhook = async (formPayload: Record<string, string>) => {
     setToast(null);
@@ -121,13 +131,17 @@ const LeadGenerationForm: React.FC = () => {
       const err =
         error && typeof error === 'object' ? (error as { name?: string }) : null;
       const isAbort = err?.name === 'AbortError';
-      setToast({
-        type: 'error',
-        message:
-          isAbort
-            ? 'Request timed out while waiting for the webhook response. The workflow may still be processing.'
-            : networkErrorMessageForWebhook(WEBHOOK_URL),
-      });
+      if (isAbort) {
+        setToast(null);
+        window.alert(
+          'Your leads will be in Instantly in 3–8 mins.'
+        );
+      } else {
+        setToast({
+          type: 'error',
+          message: networkErrorMessageForWebhook(WEBHOOK_URL),
+        });
+      }
     } finally {
       window.clearTimeout(timeoutId);
       setLoading(false);
@@ -135,26 +149,40 @@ const LeadGenerationForm: React.FC = () => {
   };
 
   const handleOneClickStart = async () => {
-    const payload = {
-      ...payloadPreview,
-      campaignName: `Apollo One-Click ${new Date().toISOString().slice(0, 10)}`,
-    };
-    await sendToWebhook(payload);
+    await sendToWebhook(form);
   };
 
   return (
     <div className="lead-form-card">
       <h2 className="lead-form-title">Apollo preset to n8n</h2>
       <p className="lead-form-subtitle">
-        One click sends this exact filter package to your webhook.
+        Edit any field below, then send this filter package to your webhook.
       </p>
       <div className="lead-form">
-        {previewRows.map(([label, value]) => (
-          <div className="form-row" key={label}>
-            <span className="form-label">{label}</span>
-            <div className="form-control" style={{ whiteSpace: 'normal' }}>
-              {value}
-            </div>
+        {FORM_FIELDS.map(({ label, key, multiline }) => (
+          <div className="form-row" key={key}>
+            <label className="form-label" htmlFor={`field-${key}`}>
+              {label}
+            </label>
+            {multiline ? (
+              <textarea
+                id={`field-${key}`}
+                className="form-control"
+                rows={4}
+                value={form[key]}
+                disabled={loading}
+                onChange={(e) => updateField(key, e.target.value)}
+              />
+            ) : (
+              <input
+                id={`field-${key}`}
+                type="text"
+                className="form-control"
+                value={form[key]}
+                disabled={loading}
+                onChange={(e) => updateField(key, e.target.value)}
+              />
+            )}
           </div>
         ))}
 

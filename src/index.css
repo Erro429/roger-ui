@@ -352,6 +352,12 @@ header p {
   cursor: not-allowed;
 }
 
+textarea.form-control {
+  min-height: 5.5rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
 .checkbox-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
